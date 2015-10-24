@@ -1,0 +1,12 @@
+program
+    class Main <empty>
+        static func main inttype
+            formals
+            stmtblock
+                assign
+                    varref a
+                    call numinstances
+                        <empty>
+                        varref d
+                return
+                    intconst 0
