@@ -158,11 +158,26 @@ public abstract class Tree {
      * Assert statements, of type Assert.
      */
     public static final int ASSERT = THROW + 1;
+    
+    /**
+     * GuardedIf statements, of type GuardedIf.	/hw1
+     */
+    public static final int GUARDEDIF = ASSERT + 1;
+    
+    /**
+     * GuardedDo statements, of type GuardedDo.	/hw1
+     */
+    public static final int GUARDEDDO = GUARDEDIF + 1;
+    
+    /**
+     * GuardedStmts statements, of type GuardedStmts.	/hw1
+     */
+    public static final int GUARDEDSTMTS = GUARDEDDO + 1;
 
     /**
      * Method invocation expressions, of type Apply.
      */
-    public static final int APPLY = ASSERT + 1;
+    public static final int APPLY = GUARDEDSTMTS + 1;
 
     /**
      * Class instance creation expressions, of type NewClass.
@@ -260,11 +275,16 @@ public abstract class Tree {
      * unary operator for null reference checks, only used internally.
      */
     public static final int NULLCHK = POSTDEC + 1;
+    
+    /*
+     * unary operator (NUMINSTANCES)
+     */
+    public static final int NUMINSTANCES = NULLCHK + 1;
 
     /**
      * Binary operators, of type Binary.
      */
-    public static final int OR = NULLCHK + 1;
+    public static final int OR = NUMINSTANCES + 1;
     public static final int AND = OR + 1;
     public static final int BITOR = AND + 1;
     public static final int BITXOR = BITOR + 1;
@@ -290,6 +310,11 @@ public abstract class Tree {
     public static final int READINTEXPR = THISEXPR + 1;
     public static final int READLINEEXPR = READINTEXPR + 1;
     public static final int PRINT = READLINEEXPR + 1;
+    
+    /*
+     * Ternary operator.	/hw1
+     */
+    public static final int COND = PRINT + 1;
     
     /**
      * Tags for Literal and TypeLiteral
@@ -708,6 +733,78 @@ public abstract class Tree {
     		}
     	}
     }
+    
+    /**
+     * A guardblock statement.	/hw1
+     */
+    public static class GuardedBlock extends Tree {
+
+    	public Tree guardedStmts;
+
+        public GuardedBlock(int kind, Tree stmt, Location loc) {
+            super(kind, loc);
+            this.guardedStmts = stmt;
+        }
+        
+    	private void guardedBlockTypePrintTo(IndentPrintWriter pw, String type) {
+    		pw.println(type);
+    		pw.incIndent();
+    		guardedStmts.printTo(pw);
+    		pw.decIndent();
+    	}
+    	
+        @Override
+        public void accept(Visitor v) {
+            v.visitGuardedBlock(this);
+        }
+
+    	@Override
+    	public void printTo(IndentPrintWriter pw) {
+    		switch (tag) {
+    		case GUARDEDIF:
+    			guardedBlockTypePrintTo(pw, "guardedif");
+    			break;
+    		case GUARDEDDO:
+    			guardedBlockTypePrintTo(pw, "guardeddo");
+    			break;
+    		}
+    	}
+    }  
+    
+    /**
+     * A guardedstmts statement.	/hw1
+     */
+    public static class GuardedStmts extends Tree {
+
+    	public Tree preStmts;
+    	public Expr condition;
+    	public Tree matter;
+    	
+
+        public GuardedStmts(Tree preStmts, Expr condition, Tree matter, Location loc) {
+            super(GUARDEDSTMTS, loc);
+            this.preStmts = preStmts;
+            this.condition = condition;
+            this.matter = matter;
+        }
+    	
+        @Override
+        public void accept(Visitor v) {
+            v.visitGuardedStmts(this);
+        }
+
+    	@Override
+    	public void printTo(IndentPrintWriter pw) {
+    		if (preStmts != null) {
+    			preStmts.printTo(pw);
+    		}
+    		pw.println("guardedstmt");
+    		pw.incIndent();
+    		condition.printTo(pw);
+    		matter.printTo(pw);
+    		pw.decIndent();
+    	}
+    }  
 
     public abstract static class Expr extends Tree {
 
@@ -885,9 +982,79 @@ public abstract class Tree {
     		case NOT:
     			unaryOperatorToString(pw, "not");
     			break;
+    		case POSTINC:	/*hw1*/
+    			unaryOperatorToString(pw, "postinc");
+    			break;
+    		case PREINC:
+    			unaryOperatorToString(pw, "preinc");
+    			break;
+    		case POSTDEC:
+    			unaryOperatorToString(pw, "postdec");
+    			break;
+    		case PREDEC:
+    			unaryOperatorToString(pw, "predec");
+    			break;
 			}
     	}
    }
+    
+    /*
+     * A unary operator of NUMINSTANCES
+     */
+    public static class NumInstances extends Expr {	/*hw1*/
+    	
+    	public String instanceName;
+    	
+    	public NumInstances(int kind, String instanceName, Location loc) {
+    		super(kind, loc);
+    		this.instanceName = instanceName;
+    	}
+
+    	@Override
+        public void accept(Visitor v) {
+            v.visitNumInstances(this);
+        }
+
+    	@Override
+    	public void printTo(IndentPrintWriter pw) {
+    		pw.println("numinstances");
+    		pw.incIndent();
+    		pw.println(instanceName);
+    		pw.decIndent();
+    	}   	
+    	
+    }
+     
+    
+    /**
+     * A ternary operation	/hw1
+     */
+    public static class Ternary extends Expr {
+
+    	public Expr expr1, expr2, expr3;
+
+        public Ternary(int kind, Expr expr1, Expr expr2, Expr expr3, Location loc) {
+            super(kind, loc);
+    		this.expr1 = expr1;
+    		this.expr2 = expr2;
+    		this.expr3 = expr3;
+        }
+
+    	@Override
+        public void accept(Visitor v) {
+            v.visitTernary(this);
+        }
+
+    	@Override
+    	public void printTo(IndentPrintWriter pw) {
+    		pw.println("cond");
+    		pw.incIndent();
+    		expr1.printTo(pw);
+    		expr2.printTo(pw);
+    		expr3.printTo(pw);
+    		pw.decIndent();
+    	}
+   }   
 
     /**
       * A binary operation.
@@ -1453,6 +1620,22 @@ public abstract class Tree {
 
         public void visitTree(Tree that) {
             assert false;
+        }
+        
+        public void visitTernary(Ternary that) {	//hw1
+        	visitTree(that);
+        }
+        
+        public void visitNumInstances(NumInstances that) {	//hw1
+        	visitTree(that);
+        }
+        
+        public void visitGuardedBlock(GuardedBlock that) {	//hw1
+        	visitTree(that);
+        }
+        
+        public void visitGuardedStmts(GuardedStmts that) {	//hw1
+        	visitTree(that);
         }
     }
 }

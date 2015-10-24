@@ -5,8 +5,7 @@ program
             stmtblock
                 assign
                     varref a
-                    call numinstances
-                        <empty>
-                        varref d
+                    numinstances
+                        d
                 return
                     intconst 0

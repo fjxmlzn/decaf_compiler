@@ -31,9 +31,15 @@ import java.util.*;
 %token LITERAL
 %token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
 %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
+%token SELF_INC		SELF_DEC							/*hw1*/
+%token NUMINSTANCES										/*hw1*/
+%token FI CASESEP										/*hw1*/
+%token DO OD											/*hw1*/
 %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
 %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
+%token '?' ':'											/*hw1*/
 
+%right '?' ':'
 %left OR
 %left AND 
 %nonassoc EQUAL NOT_EQUAL
@@ -41,6 +47,7 @@ import java.util.*;
 %left  '+' '-'
 %left  '*' '/' '%'  
 %nonassoc UMINUS '!' 
+%nonassoc SELF_INC SELF_DEC								/*hw1*/
 %nonassoc '[' '.' 
 %nonassoc ')' EMPTY
 %nonassoc ELSE
@@ -195,6 +202,8 @@ Stmt		    :	VariableDef
                 |	PrintStmt ';'
                 |	BreakStmt ';'
                 |	StmtBlock
+                |	GuardedIfStmt	/*hw1*/
+                |	GuardedDoStmt	/*hw1*/
                 ;
 
 SimpleStmt      :	LValue '=' Expr
@@ -246,6 +255,10 @@ Expr            :	LValue
 					}
                 |	Call
                 |	Constant
+                |	Expr '?' Expr ':' Expr	/*hw1*/
+                	{
+                		$$.expr = new Tree.Ternary(Tree.COND, $1.expr, $3.expr, $5.expr, $2.loc);
+                	}
                 |	Expr '+' Expr
                 	{
                 		$$.expr = new Tree.Binary(Tree.PLUS, $1.expr, $3.expr, $2.loc);
@@ -310,6 +323,22 @@ Expr            :	LValue
                 	{
                 		$$.expr = new Tree.Unary(Tree.NOT, $2.expr, $1.loc);
                 	}
+                |	Expr SELF_INC	/*hw1*/
+                	{
+                		$$.expr = new Tree.Unary(Tree.POSTINC, $1.expr, $2.loc);
+                	}
+                |	SELF_INC Expr	/*hw1*/
+                	{
+                		$$.expr = new Tree.Unary(Tree.PREINC, $2.expr, $1.loc);
+                	}
+                |	Expr SELF_DEC	/*hw1*/
+                	{
+                		$$.expr = new Tree.Unary(Tree.POSTDEC, $1.expr, $2.loc);
+                	}                	
+                |	SELF_DEC Expr	/*hw1*/
+                	{
+                		$$.expr = new Tree.Unary(Tree.PREDEC, $2.expr, $1.loc);
+                	}                 	
                 |	READ_INTEGER '(' ')'
                 	{
                 		$$.expr = new Tree.ReadIntExpr($1.loc);
@@ -338,6 +367,10 @@ Expr            :	LValue
                 	{
                 		$$.expr = new Tree.TypeCast($3.ident, $5.expr, $5.loc);
                 	} 
+                |	NUMINSTANCES '(' IDENTIFIER ')'	/*hw1*/
+                	{
+                		$$.expr = new Tree.NumInstances(Tree.NUMINSTANCES, $3.ident, $1.loc);
+                	}
                 ;
 	
 Constant        :	LITERAL
@@ -418,6 +451,31 @@ PrintStmt       :	PRINT '(' ExprList ')'
 						$$.stmt = new Print($3.elist, $1.loc);
 					}
                 ;
+
+GuardedIfStmt	:	IF GuardedStmts FI	/*hw1*/
+					{
+						$$.stmt = new Tree.GuardedBlock(Tree.GUARDEDIF, $2.stmt, $1.loc);
+					}
+				;
+				
+GuardedDoStmt	:	DO GuardedStmts OD	/*hw1*/
+					{
+						$$.stmt = new Tree.GuardedBlock(Tree.GUARDEDDO, $2.stmt, $1.loc);
+					}
+				;
+
+GuardedStmts	:	GuardedStmts CASESEP Expr ':' Stmt	/*hw1*/
+					{
+						$$ = new SemValue();
+						$$.stmt = new Tree.GuardedStmts($1.stmt, $3.expr, $5.stmt, $4.loc);
+					
+					}
+				|	Expr ':' Stmt
+					{
+						$$ = new SemValue();
+						$$.stmt = new Tree.GuardedStmts(null, $1.expr, $3.stmt, $2.loc);
+					}
+				;
 
 %%
     

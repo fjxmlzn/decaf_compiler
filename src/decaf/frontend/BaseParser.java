@@ -30,6 +30,7 @@ public abstract class BaseParser {
 	int yylex() {
 		int token = -1;
 		try {
+			//lexer.diagnose();
 			token = lexer.yylex();
 		} catch (Exception e) {
 			yyerror("lexer error: " + e.getMessage());

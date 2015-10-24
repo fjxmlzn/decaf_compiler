@@ -182,6 +182,18 @@ public class SemValue {
 		case Parser.STATIC:
 			msg = "keyword : static";
 			break;
+		case Parser.NUMINSTANCES:
+			msg = "keyword : numinstances";
+			break;
+		case Parser.FI:
+			msg = "keyword : fi";
+			break;
+		case Parser.DO:
+			msg = "keyword : do";
+			break;
+		case Parser.OD:
+			msg = "keyword : od";
+			break;
 
 		// 常量
 		case Parser.LITERAL:
@@ -218,6 +230,15 @@ public class SemValue {
 			break;
 		case Parser.OR:
 			msg = "operator : ||";
+			break;
+		case Parser.SELF_INC:
+			msg = "operator : ++";
+			break;
+		case Parser.SELF_DEC:
+			msg = "operator : --";
+			break;
+		case Parser.CASESEP:
+			msg = "operator : |||";
 			break;
 		default:
 			msg = "operator : " + (char) code;

@@ -58,7 +58,7 @@ public final class Driver {
 	}
 
 	private void compile() {
-
+		//parser.diagnose();//debug
 		Tree.TopLevel tree = parser.parseFile();
 		checkPoint();
 		if (option.getLevel() == Option.Level.LEVEL0) {
