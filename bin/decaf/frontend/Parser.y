@@ -220,19 +220,13 @@ SimpleStmt      :	LValue '=' Expr
                 	}
                 ;
 
-Receiver     	:	Expr '.'
-                |	/* empty */
-                	{
-                		$$ = new SemValue();
-                	}
-                ; 
-
-LValue          :	Receiver IDENTIFIER
+LValue          :	IDENTIFIER
 					{
-						$$.lvalue = new Tree.Ident($1.expr, $2.ident, $2.loc);
-						if ($1.loc == null) {
-							$$.loc = $2.loc;
-						}
+						$$.lvalue = new Tree.Ident(new SemValue().expr, $1.ident, $1.loc);
+					}
+				|	Expr '.' IDENTIFIER
+					{
+						$$.lvalue = new Tree.Ident($1.expr, $3.ident, $3.loc);
 					}
                 |	Expr '[' Expr ']'
                 	{
@@ -240,12 +234,13 @@ LValue          :	Receiver IDENTIFIER
                 	}
                 ;
 
-Call            :	Receiver IDENTIFIER '(' Actuals ')'
+Call            :	IDENTIFIER '(' Actuals ')'
 					{
-						$$.expr = new Tree.CallExpr($1.expr, $2.ident, $4.elist, $2.loc);
-						if ($1.loc == null) {
-							$$.loc = $2.loc;
-						}
+						$$.expr = new Tree.CallExpr(new SemValue().expr, $1.ident, $3.elist, $1.loc);
+					}
+				|	Expr '.' IDENTIFIER '(' Actuals ')'
+					{
+						$$.expr = new Tree.CallExpr($1.expr, $3.ident, $5.elist, $3.loc);
 					}
                 ;
 
@@ -323,21 +318,33 @@ Expr            :	LValue
                 	{
                 		$$.expr = new Tree.Unary(Tree.NOT, $2.expr, $1.loc);
                 	}
-                |	Expr SELF_INC	/*hw1*/
+                |	IDENTIFIER	/*hw1*/
+					{
+						$$.expr = new Tree.Ident(new SemValue().expr, $1.ident, $1.loc);
+					}
+					SELF_INC
                 	{
-                		$$.expr = new Tree.Unary(Tree.POSTINC, $1.expr, $2.loc);
+                		$$.expr = new Tree.Unary(Tree.POSTINC, $2.expr, $3.loc);
                 	}
-                |	SELF_INC Expr	/*hw1*/
+                |	SELF_INC	/*hw1*/
+                	IDENTIFIER
                 	{
-                		$$.expr = new Tree.Unary(Tree.PREINC, $2.expr, $1.loc);
+                		Tree.Expr tmpExpr = new Tree.Ident(new SemValue().expr, $2.ident, $2.loc);
+                		$$.expr = new Tree.Unary(Tree.PREINC, tmpExpr, $1.loc);
                 	}
-                |	Expr SELF_DEC	/*hw1*/
+                |	IDENTIFIER	/*hw1*/
                 	{
-                		$$.expr = new Tree.Unary(Tree.POSTDEC, $1.expr, $2.loc);
+                		$$.expr = new Tree.Ident(new SemValue().expr, $1.ident, $1.loc);
+                	}
+                	SELF_DEC
+                	{
+                		$$.expr = new Tree.Unary(Tree.POSTDEC, $2.expr, $3.loc);
                 	}                	
-                |	SELF_DEC Expr	/*hw1*/
+                |	SELF_DEC	/*hw1*/
+                	IDENTIFIER
                 	{
-                		$$.expr = new Tree.Unary(Tree.PREDEC, $2.expr, $1.loc);
+                		Tree.Expr tmpExpr = new Tree.Ident(new SemValue().expr, $2.ident, $2.loc);
+                		$$.expr = new Tree.Unary(Tree.PREDEC, tmpExpr, $1.loc);
                 	}                 	
                 |	READ_INTEGER '(' ')'
                 	{
